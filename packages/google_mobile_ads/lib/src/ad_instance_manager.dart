@@ -1164,7 +1164,9 @@ class AdMessageCodec extends StandardMessageCodec {
       case _valueRewardItem:
         return RewardItem(
           readValueOfType(buffer.getUint8(), buffer),
-          readValueOfType(buffer.getUint8(), buffer),
+          // type is non-nullable String; mediation can deliver a null reward
+          // type -> "Null is not a subtype of String". Coalesce to ''.
+          _safeReadString(buffer),
         );
       case _valueResponseInfo:
         return ResponseInfo(
@@ -1253,7 +1255,9 @@ class AdMessageCodec extends StandardMessageCodec {
           buffer.getUint8(),
           buffer,
         );
-        final String description = readValueOfType(buffer.getUint8(), buffer);
+        // description is non-nullable; some adapters report a null status
+        // string, which would otherwise crash on this assignment.
+        final String description = _safeReadString(buffer);
 
         double latency = readValueOfType(buffer.getUint8(), buffer).toDouble();
         // Android provides this value as an int in milliseconds while iOS

@@ -1633,6 +1633,21 @@ void main() {
       expect(result.type, 'type');
     });
 
+    // Regression: type is non-nullable String; mediation can deliver a null
+    // reward type. Craft the wire bytes (encode can't produce null) and assert
+    // the decoder coalesces to '' instead of throwing.
+    test('decode $RewardItem with null type coalesces to ""', () {
+      final WriteBuffer buffer = WriteBuffer();
+      buffer.putUint8(132); // _valueRewardItem
+      codec.writeValue(buffer, 5); // amount
+      codec.writeValue(buffer, null); // type (null from native)
+      final ByteData data = buffer.done();
+
+      final RewardItem result = codec.decodeMessage(data);
+      expect(result.amount, 5);
+      expect(result.type, '');
+    });
+
     test('encode/decode $InlineAdaptiveSize', () async {
       ByteData byteData = codec.encodeMessage(
         AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(100),
